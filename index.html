@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.json">
+<title>FoodFit AI</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f7fb;color:#111827}
+header{padding:24px 20px 12px}.brand{font-size:30px;font-weight:800}.sub{color:#6b7280;margin-top:5px}
+main{padding:12px 16px 40px;max-width:650px;margin:auto}.card{background:white;border-radius:22px;padding:18px;margin:12px 0;box-shadow:0 4px 20px #0000000b}
+.preview{width:100%;max-height:360px;object-fit:contain;border-radius:16px;background:#eef1f5}.drop{border:2px dashed #cbd5e1;border-radius:18px;padding:30px 15px;text-align:center}
+button{border:0;border-radius:14px;padding:14px 18px;font-size:16px;font-weight:700;cursor:pointer}.primary{background:#111827;color:white;width:100%;margin-top:12px}
+input{width:100%;padding:13px;border:1px solid #d1d5db;border-radius:12px;margin:8px 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:#f5f7fb;border-radius:15px;padding:13px}.metric b{display:block;font-size:20px}.muted{color:#6b7280}.badge{display:inline-block;padding:8px 12px;border-radius:999px;background:#e5e7eb;font-weight:700}.hidden{display:none}.error{color:#b91c1c}.ok{color:#047857}
+</style>
+</head>
+<body>
+<header><div class="brand">🍽️ FoodFit AI</div><div class="sub">Your personal food & fat-loss assistant</div></header>
+<main>
+<section class="card">
+  <div class="drop">
+    <div style="font-size:44px">📸</div>
+    <h3>Choose a food photo</h3>
+    <div class="muted">Camera or your iPhone Photo Library</div>
+    <input id="photo" type="file" accept="image/*">
+  </div>
+  <img id="preview" class="preview hidden" alt="Food preview">
+  <button id="analyze" class="primary hidden">Analyze Food</button>
+</section>
+<section id="result" class="card hidden">
+  <div id="summary"></div>
+  <div class="grid" style="margin-top:12px">
+    <div class="metric">Calories<b id="cal">—</b></div>
+    <div class="metric">Protein<b id="protein">—</b></div>
+    <div class="metric">Carbs<b id="carbs">—</b></div>
+    <div class="metric">Fat<b id="fat">—</b></div>
+  </div>
+  <p><b>Portion:</b> <span id="portion" class="badge">—</span></p>
+  <p id="advice" class="muted"></p>
+</section>
+<section class="card">
+<h3>⚙️ Gemini API key</h3>
+<input id="key" type="password" placeholder="Paste your Gemini API key">
+<div class="muted" style="font-size:13px">For your personal use. Keep this key private.</div>
+</section>
+<section class="card">
+<h3>🎯 Your profile</h3>
+<div class="grid">
+<div class="metric">Age<b>26</b></div><div class="metric">Height<b>5'5"</b></div>
+<div class="metric">Weight<b>80+ kg</b></div><div class="metric">Activity<b>Low</b></div>
+</div>
+</section>
+<div id="status" class="muted"></div>
+</main>
+<script>
+const photo=document.querySelector('#photo'),preview=document.querySelector('#preview'),analyze=document.querySelector('#analyze'),result=document.querySelector('#result'),status=document.querySelector('#status'),key=document.querySelector('#key');
+key.value=localStorage.getItem('foodfit_gemini_key')||'';
+key.addEventListener('input',()=>localStorage.setItem('foodfit_gemini_key',key.value.trim()));
+let imageData='';
+photo.addEventListener('change',()=>{const f=photo.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{imageData=r.result;preview.src=imageData;preview.classList.remove('hidden');analyze.classList.remove('hidden');result.classList.add('hidden');status.textContent='Photo ready.'};r.readAsDataURL(f)});
+analyze.addEventListener('click',async()=>{
+const apiKey=key.value.trim();if(!apiKey){status.textContent='Please paste your Gemini API key first.';status.className='error';return}
+analyze.disabled=true;analyze.textContent='Analyzing…';status.textContent='AI is checking your food photo…';status.className='muted';
+try{
+const base64=imageData.split(',')[1],mime=imageData.substring(5,imageData.indexOf(';'));
+const prompt=`You are a nutrition estimation assistant for a 26-year-old person, 5'5", 80+ kg, low activity, trying to reduce body fat. Analyze this food photo. Identify visible foods and estimate calories, protein, carbs and fat. Consider common Bangladeshi foods. Estimates are approximate because a photo cannot know exact grams/oil. Judge the visible portion for a fat-loss meal. Return ONLY valid JSON: {"summary":"short description","calories":number,"protein":number,"carbs":number,"fat":number,"portion":"Low|Okay|High","advice":"short practical advice"}.`;
+const body={contents:[{parts:[{text:prompt},{inline_data:{mime_type:mime,data:base64}}]}],generationConfig:{temperature:0.2,response_mime_type:"application/json"}};
+const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key='+encodeURIComponent(apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+if(!resp.ok)throw new Error(await resp.text());
+const data=await resp.json(),text=data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+const d=JSON.parse(text.replace(/```json|```/g,'').trim());
+document.querySelector('#summary').innerHTML='<h3>'+esc(d.summary)+'</h3>';
+document.querySelector('#cal').textContent=d.calories+' kcal';document.querySelector('#protein').textContent=d.protein+' g';document.querySelector('#carbs').textContent=d.carbs+' g';document.querySelector('#fat').textContent=d.fat+' g';document.querySelector('#portion').textContent=d.portion;document.querySelector('#advice').textContent=d.advice;
+result.classList.remove('hidden');status.textContent='Done. Photo-based nutrition is approximate.';status.className='ok';
+}catch(e){status.textContent='Could not analyze: '+(e.message||e);status.className='error'}
+analyze.disabled=false;analyze.textContent='Analyze Food';
+});
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+</script>
+</body></html>
