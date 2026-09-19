@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>FoodFit — Personal Fitness</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f7fb;color:#172033}
+.app{max-width:720px;margin:auto;padding:18px 16px 40px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+h1{font-size:25px;margin:0}.sub{color:#687386;font-size:13px;margin-top:3px}
+.card{background:#fff;border-radius:20px;padding:17px;margin:12px 0;box-shadow:0 4px 18px #0000000b}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#f6f7fa;border-radius:15px;padding:13px}.label{font-size:12px;color:#687386}.num{font-size:22px;font-weight:750;margin-top:3px}
+input,select,button{width:100%;font:inherit;border-radius:13px;padding:12px;border:1px solid #dbe0e8;background:#fff}
+button{border:0;background:#111827;color:white;font-weight:700;cursor:pointer}.secondary{background:#eef1f5;color:#172033}.danger{background:#fff0f0;color:#b42318}.row{display:flex;gap:9px}.row>*{flex:1}
+h2{font-size:18px;margin:0 0 12px}.small{font-size:12px;color:#687386}.progress{height:12px;background:#e8ebf0;border-radius:99px;overflow:hidden;margin:9px 0}.bar{height:100%;width:0;background:#111827;border-radius:99px;transition:.3s}
+.food{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #edf0f4}.food:last-child{border:0}.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#eef1f5;font-size:11px}
+.notice{padding:11px;border-radius:13px;background:#f7f3df;font-size:13px}.ok{background:#eaf7ee}.warn{background:#fff1e7}
+.hidden{display:none}.preview{width:100%;max-height:280px;object-fit:cover;border-radius:15px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div><h1>FoodFit</h1><div class="sub">Your simple daily fitness tracker</div></div><span class="pill">API-free</span></div>
+
+  <div class="card">
+    <h2>Today's progress</h2>
+    <div class="grid">
+      <div class="stat"><div class="label">Calories eaten</div><div class="num" id="eaten">0</div></div>
+      <div class="stat"><div class="label">Calories burned</div><div class="num" id="burned">0</div></div>
+      <div class="stat"><div class="label">Net calories</div><div class="num" id="net">0</div></div>
+      <div class="stat"><div class="label">Daily target</div><div class="num" id="targetView">1500</div></div>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div id="status" class="notice">Add your first meal.</div>
+  </div>
+
+  <div class="card">
+    <h2>Add food</h2>
+    <input id="photo" type="file" accept="image/*">
+    <img id="preview" class="preview hidden">
+    <p class="small">Photo is only stored on this device. Without an AI/API, the app cannot reliably identify food from the picture automatically.</p>
+    <input id="foodName" placeholder="Food name (e.g. rice)">
+    <div class="row" style="margin-top:9px">
+      <input id="calories" type="number" min="0" placeholder="Calories">
+      <input id="portion" placeholder="Portion (optional)">
+    </div>
+    <button id="addFood" style="margin-top:9px">Add to today's food</button>
+    <p class="small">For accuracy, use the calories from your food label, a trusted food database, or the app's common-food list below.</p>
+    <select id="quickFood" style="margin-top:7px">
+      <option value="">Common foods — tap to fill</option>
+      <option data-c="130">Cooked white rice — 130 kcal / 100g</option>
+      <option data-c="165">Cooked chicken breast — 165 kcal / 100g</option>
+      <option data-c="155">Cooked egg — 155 kcal / 100g</option>
+      <option data-c="120">Cooked dal — 120 kcal / 100g</option>
+      <option data-c="35">Mixed vegetables — 35 kcal / 100g</option>
+      <option data-c="208">Banana — 208 kcal / 100g</option>
+      <option data-c="57">Apple — 57 kcal / 100g</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <h2>Calories burned</h2>
+    <div class="row">
+      <select id="activity">
+        <option value="3.3">Walking — easy</option>
+        <option value="4.3">Walking — brisk</option>
+        <option value="7">Jogging</option>
+        <option value="8">Running</option>
+        <option value="6">Cycling — moderate</option>
+        <option value="3.5">Housework</option>
+        <option value="5">Workout — moderate</option>
+      </select>
+      <input id="minutes" type="number" min="1" placeholder="Minutes">
+    </div>
+    <button id="addBurn" style="margin-top:9px">Add activity</button>
+    <p class="small">Burn estimate uses your saved weight + activity intensity. Apple Health steps/active energy cannot be read directly by a normal GitHub webpage.</p>
+  </div>
+
+  <div class="card">
+    <h2>My goal</h2>
+    <div class="grid">
+      <input id="age" type="number" value="26" placeholder="Age">
+      <input id="weight" type="number" value="82" placeholder="Weight kg">
+      <input id="height" type="number" value="165" placeholder="Height cm">
+      <select id="sex"><option value="female">Female</option><option value="male">Male</option></select>
+    </div>
+    <label class="small" style="display:block;margin:12px 0 5px">Daily calorie target</label>
+    <input id="target" type="number" min="1000" value="1500">
+    <button id="saveGoal" style="margin-top:9px">Save goal</button>
+    <div class="small" style="margin-top:9px">1500 kcal is your current chosen target. It is a tracking target, not a medical prescription.</div>
+  </div>
+
+  <div class="card">
+    <h2>Today's food</h2>
+    <div id="foodList"><div class="small">No food added yet.</div></div>
+    <button id="clear" class="danger" style="margin-top:10px">Clear today's data</button>
+  </div>
+
+  <div class="card">
+    <h2>Important</h2>
+    <div class="notice">Food calories and exercise calories are estimates. The useful part is consistency over many days, not whether one meal is off by a few calories.</div>
+  </div>
+</div>
+<script>
+const KEY="foodfit_final_v1";
+const today=()=>new Date().toISOString().slice(0,10);
+let db=JSON.parse(localStorage.getItem(KEY)||"null")||{date:today(),target:1500,profile:{age:26,weight:82,height:165,sex:"female"},foods:[],burn:0};
+if(db.date!==today()){db={...db,date:today(),foods:[],burn:0};save()}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+const $=id=>document.getElementById(id);
+function render(){
+ $("eaten").textContent=Math.round(db.foods.reduce((a,b)=>a+b.cal,0));
+ $("burned").textContent=Math.round(db.burn);
+ $("net").textContent=Math.round(db.foods.reduce((a,b)=>a+b.cal,0)-db.burn);
+ $("targetView").textContent=Math.round(db.target);
+ $("target").value=db.target;$("age").value=db.profile.age;$("weight").value=db.profile.weight;$("height").value=db.profile.height;$("sex").value=db.profile.sex;
+ let eaten=db.foods.reduce((a,b)=>a+b.cal,0), pct=Math.min(100,Math.max(0,eaten/db.target*100));$("bar").style.width=pct+"%";
+ let s=$("status");let net=eaten-db.burn;
+ if(net<=db.target){s.className="notice ok";s.textContent=`You're within your ${db.target} kcal target. Keep going steadily.`}
+ else{s.className="notice warn";s.textContent=`You're about ${Math.round(net-db.target)} kcal above the target after logged activity.`}
+ $("foodList").innerHTML=db.foods.length?db.foods.map((f,i)=>`<div class="food"><div><b>${esc(f.name)}</b><div class="small">${esc(f.portion||"portion not entered")}</div></div><b>${Math.round(f.cal)} kcal</b></div>`).join(""):"<div class='small'>No food added yet.</div>";
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+$("photo").onchange=e=>{let f=e.target.files[0];if(f){let u=URL.createObjectURL(f);$("preview").src=u;$("preview").classList.remove("hidden")}};
+$("quickFood").onchange=e=>{let o=e.target.selectedOptions[0];if(o.dataset.c){$("calories").value=o.dataset.c;$("foodName").value=o.textContent.split(" — ")[0];$("portion").value="100 g"}};
+$("addFood").onclick=()=>{let name=$("foodName").value.trim(),cal=Number($("calories").value);if(!name||!cal||cal<0){alert("Enter food name and calories.");return}db.foods.push({name,cal,portion:$("portion").value.trim()});save();$("foodName").value="";$("calories").value="";$("portion").value="";$("photo").value="";$("preview").classList.add("hidden");render()};
+$("addBurn").onclick=()=>{let min=Number($("minutes").value);if(!min||min<1){alert("Enter activity minutes.");return}let met=Number($("activity").value),kg=Number(db.profile.weight)||82;let kcal=met*3.5*kg/200*min;db.burn+=kcal;save();$("minutes").value="";render()};
+$("saveGoal").onclick=()=>{let t=Math.max(1000,Number($("target").value)||1500);db.target=t;db.profile={age:Number($("age").value)||26,weight:Number($("weight").value)||82,height:Number($("height").value)||165,sex:$("sex").value};save();render();alert("Goal saved.")};
+$("clear").onclick=()=>{if(confirm("Clear today's food and activity?")){db.foods=[];db.burn=0;save();render()}};
+render();
+</script>
+</body>
+</html>
